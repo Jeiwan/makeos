@@ -12,12 +12,6 @@ import (
 
 const localKeosdURL = "http://127.0.0.1:8899"
 
-// Keos ...
-var Keos = node{
-	Client: eosgo.New(localKeosdURL),
-	Wallet: "default",
-}
-
 // EOSIO ...
 var EOSIO = Account("eosio")
 
@@ -31,11 +25,11 @@ func (a Account) Name() string {
 
 // PushAction ...
 func (a Account) PushAction(contract *Contract, action string, args map[string]interface{}) error {
-	Node.Client.SetSigner(eosgo.NewWalletSigner(
-		Keos.Client,
-		Keos.Wallet,
+	nodeos.Client.SetSigner(eosgo.NewWalletSigner(
+		keos.Client,
+		keos.Wallet,
 	))
-	if err := Keos.Client.WalletUnlock(Keos.Wallet, Keos.WalletPassword); err != nil {
+	if err := keos.Client.WalletUnlock(keos.Wallet, keos.WalletPassword); err != nil {
 		if !strings.Contains(err.Error(), "Already unlocked") {
 			return err
 		}
@@ -46,7 +40,7 @@ func (a Account) PushAction(contract *Contract, action string, args map[string]i
 		return err
 	}
 
-	abiResp, err := Node.Client.GetABI(eosgo.AccountName(contract.Account))
+	abiResp, err := nodeos.Client.GetABI(eosgo.AccountName(contract.Account))
 	if err != nil {
 		return err
 	}
@@ -59,7 +53,7 @@ func (a Account) PushAction(contract *Contract, action string, args map[string]i
 		return err
 	}
 
-	_, err = Node.Client.SignPushActions(
+	_, err = nodeos.Client.SignPushActions(
 		&eosgo.Action{
 			Account: eosgo.AccountName(contract.Account),
 			Name:    eosgo.ActionName(action),
@@ -78,17 +72,17 @@ func (a Account) PushAction(contract *Contract, action string, args map[string]i
 
 // CreateAccount ...
 func CreateAccount(accName string, owner Account) Account {
-	Node.Client.SetSigner(eosgo.NewWalletSigner(
-		Keos.Client,
-		Keos.Wallet,
+	nodeos.Client.SetSigner(eosgo.NewWalletSigner(
+		keos.Client,
+		keos.Wallet,
 	))
-	if err := Keos.Client.WalletUnlock(Keos.Wallet, Keos.WalletPassword); err != nil {
+	if err := keos.Client.WalletUnlock(keos.Wallet, keos.WalletPassword); err != nil {
 		if !strings.Contains(err.Error(), "Already unlocked") {
 			logrus.Fatalln(err)
 		}
 	}
 
-	pubKeys, err := Keos.Client.GetPublicKeys()
+	pubKeys, err := keos.Client.GetPublicKeys()
 	if err != nil {
 		logrus.Fatalln(err)
 	}
@@ -116,7 +110,7 @@ func CreateAccount(accName string, owner Account) Account {
 		},
 	}
 
-	_, err = Node.Client.SignPushActions(
+	_, err = nodeos.Client.SignPushActions(
 		&eosgo.Action{
 			Account: "eosio",
 			Name:    "newaccount",

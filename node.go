@@ -16,19 +16,30 @@ import (
 	eosgo "github.com/eoscanada/eos-go"
 )
 
-const localNodeURL = "http://127.0.0.1:8888"
+var nodeos *node
+var keos *node
 
 type node struct {
 	Client         *eosgo.API
+	URL            string
 	Wallet         string
 	WalletPassword string
-	URL            string
 }
 
-// Node ...
-var Node = node{
-	URL:    localNodeURL,
-	Client: eosgo.New(localNodeURL),
+func newNodeos(URL string) *node {
+	return &node{
+		Client: eosgo.New(URL),
+		URL:    URL,
+	}
+}
+
+func newKeos(URL, wallet, walletPassword string) *node {
+	return &node{
+		Client:         eosgo.New(URL),
+		URL:            URL,
+		Wallet:         wallet,
+		WalletPassword: walletPassword,
+	}
 }
 
 // Cleanup ...
@@ -130,7 +141,7 @@ func (n node) Restart() {
 
 	logrus.Infoln("nodeos starting")
 	for i := 0; i < 5; i++ {
-		if _, err := Node.Client.GetInfo(); err == nil {
+		if _, err := nodeos.Client.GetInfo(); err == nil {
 			break
 		}
 		time.Sleep(1 * time.Second)

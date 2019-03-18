@@ -38,11 +38,11 @@ func (c Contract) Build() error {
 
 // Deploy ...
 func (c Contract) Deploy() error {
-	Node.Client.SetSigner(eosgo.NewWalletSigner(
-		Keos.Client,
-		Keos.Wallet,
+	nodeos.Client.SetSigner(eosgo.NewWalletSigner(
+		keos.Client,
+		keos.Wallet,
 	))
-	if err := Keos.Client.WalletUnlock(Keos.Wallet, Keos.WalletPassword); err != nil {
+	if err := keos.Client.WalletUnlock(keos.Wallet, keos.WalletPassword); err != nil {
 		if !strings.Contains(err.Error(), "Already unlocked") {
 			logrus.Fatalln(err)
 		}
@@ -68,7 +68,7 @@ func (c Contract) Deploy() error {
 		return err
 	}
 
-	_, err = Node.Client.SignPushActions(
+	_, err = nodeos.Client.SignPushActions(
 		setCode,
 		setAbi,
 	)
@@ -78,7 +78,7 @@ func (c Contract) Deploy() error {
 
 // ReadTable ...
 func (c Contract) ReadTable(table, scope string) ([]map[string]interface{}, error) {
-	resp, err := Node.Client.GetTableRows(
+	resp, err := nodeos.Client.GetTableRows(
 		eosgo.GetTableRowsRequest{
 			Code:  c.Account.Name(),
 			Table: table,

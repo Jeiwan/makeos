@@ -10,9 +10,6 @@ import (
 )
 
 func main() {
-	Keos.Wallet = "dev"
-	Keos.WalletPassword = "password"
-
 	WithEnvironment(DevEnvironment, func() {
 		tokenAcc := CreateAccount("eosio.token", EOSIO)
 		alice := CreateAccount("alice", EOSIO)
