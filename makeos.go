@@ -10,20 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const localNodeURL = "http://127.0.0.1:8888"
 const localKeosdURL = "http://127.0.0.1:8899"
-
-type node struct {
-	Client         *eosgo.API
-	Wallet         string
-	WalletPassword string
-}
-
-// Node ...
-var Node = node{
-	Client: eosgo.New(localNodeURL),
-	Wallet: "default",
-}
 
 // Keos ...
 var Keos = node{
