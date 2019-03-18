@@ -10,80 +10,81 @@ import (
 )
 
 func main() {
-	// keos and nodeos must be already running
 	Keos.Wallet = "dev"
 	Keos.WalletPassword = "password"
 
-	tokenAcc := CreateAccount("eosio.token", EOSIO)
-	alice := CreateAccount("alice", EOSIO)
-	bob := CreateAccount("bob", EOSIO)
+	WithEnvironment(DevEnvironment, func() {
+		tokenAcc := CreateAccount("eosio.token", EOSIO)
+		alice := CreateAccount("alice", EOSIO)
+		bob := CreateAccount("bob", EOSIO)
 
-	token, err := NewContract("/Users/Jeiwan/.tmp/eosio.contracts/eosio.token", tokenAcc)
-	if err != nil {
-		logrus.Fatalln(err)
-	}
+		token, err := NewContract("/Users/User/.tmp/eosio.contracts/eosio.token", tokenAcc)
+		if err != nil {
+			logrus.Fatalln(err)
+		}
 
-	if err := token.Build(); err != nil {
-		logrus.Fatalln(err)
-	}
-	if err := token.Deploy(); err != nil {
-		logrus.Fatalln(err)
-	}
+		if err := token.Build(); err != nil {
+			logrus.Fatalln(err)
+		}
+		if err := token.Deploy(); err != nil {
+			logrus.Fatalln(err)
+		}
 
-	if err := tokenAcc.PushAction(
-		token,
-		"create",
-		map[string]interface{}{
-			"issuer":         tokenAcc.Name(),
-			"maximum_supply": "1000000.0000 BTC",
-		},
-	); err != nil {
-		logrus.Fatalln(err)
-	}
+		if err := tokenAcc.PushAction(
+			token,
+			"create",
+			map[string]interface{}{
+				"issuer":         tokenAcc.Name(),
+				"maximum_supply": "1000000.0000 BTC",
+			},
+		); err != nil {
+			logrus.Fatalln(err)
+		}
 
-	if err := tokenAcc.PushAction(
-		token,
-		"issue",
-		map[string]interface{}{
-			"to":       alice.Name(),
-			"quantity": "100.0000 BTC",
-			"memo":     "a gift",
-		},
-	); err != nil {
-		logrus.Fatalln(err)
-	}
+		if err := tokenAcc.PushAction(
+			token,
+			"issue",
+			map[string]interface{}{
+				"to":       alice.Name(),
+				"quantity": "100.0000 BTC",
+				"memo":     "a gift",
+			},
+		); err != nil {
+			logrus.Fatalln(err)
+		}
 
-	if err := alice.PushAction(
-		token,
-		"transfer",
-		map[string]interface{}{
-			"from":     alice.Name(),
-			"to":       bob.Name(),
-			"quantity": "1.0000 BTC",
-			"memo":     "a gift",
-		},
-	); err != nil {
-		logrus.Fatalln(err)
-	}
+		if err := alice.PushAction(
+			token,
+			"transfer",
+			map[string]interface{}{
+				"from":     alice.Name(),
+				"to":       bob.Name(),
+				"quantity": "1.0000 BTC",
+				"memo":     "a gift",
+			},
+		); err != nil {
+			logrus.Fatalln(err)
+		}
 
-	rows, err := token.ReadTable(
-		"accounts",
-		alice.Name(),
-	)
-	if err != nil {
-		logrus.Fatalln(err)
-	}
+		rows, err := token.ReadTable(
+			"accounts",
+			alice.Name(),
+		)
+		if err != nil {
+			logrus.Fatalln(err)
+		}
 
-	logrus.Infof("Alice's balance: %s\n", rows[0]["balance"].(string))
+		logrus.Infof("Alice's balance: %s\n", rows[0]["balance"].(string))
 
-	rows, err = token.ReadTable(
-		"accounts",
-		bob.Name(),
-	)
-	if err != nil {
-		logrus.Fatalln(err)
-	}
-	logrus.Infof("Bob's balance: %s\n", rows[0]["balance"].(string))
+		rows, err = token.ReadTable(
+			"accounts",
+			bob.Name(),
+		)
+		if err != nil {
+			logrus.Fatalln(err)
+		}
+		logrus.Infof("Bob's balance: %s\n", rows[0]["balance"].(string))
+	})
 }
 ```
 
