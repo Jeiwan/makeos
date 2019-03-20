@@ -47,6 +47,11 @@ func (n node) Cleanup() {
 	pidFile := "./.eosnode.pid"
 	tmpPath := fmt.Sprintf("%s/eosnode", os.TempDir())
 
+	if _, err := os.Stat(pidFile); err == os.ErrNotExist {
+		logrus.Info("pid file not found, skipping cleanup")
+		return
+	}
+
 	pidFileContent, err := ioutil.ReadFile(pidFile)
 	if err != nil {
 		logrus.Fatalln("read pidfile:", err)
@@ -76,8 +81,8 @@ func (n node) Cleanup() {
 	}
 }
 
-// Restart ...
-func (n node) Restart() {
+// Start ...
+func (n node) Start() {
 	eosnodeID := "eosnode"
 	pidFilename := fmt.Sprintf("./.%s.pid", eosnodeID)
 	if _, err := os.Stat(pidFilename); !os.IsNotExist(err) {

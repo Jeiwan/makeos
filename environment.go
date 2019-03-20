@@ -1,19 +1,21 @@
 package makeos
 
-// DevEnvironment ...
-var DevEnvironment = &Environment{
-	NodeosURL:      "http://127.0.0.1:8888",
-	KeosURL:        "http://127.0.0.1:8899",
-	Wallet:         "dev",
-	WalletPassword: "password",
-}
-
 // Environment ...
 type Environment struct {
+	Autostart      bool
 	NodeosURL      string
 	KeosURL        string
 	Wallet         string
 	WalletPassword string
+}
+
+// DevEnvironment ...
+var DevEnvironment = &Environment{
+	Autostart:      true,
+	NodeosURL:      "http://127.0.0.1:8888",
+	KeosURL:        "http://127.0.0.1:8899",
+	Wallet:         "dev",
+	WalletPassword: "password",
 }
 
 // WithEnvironment ...
@@ -27,7 +29,9 @@ func WithEnvironment(environment *Environment, body func()) {
 
 	defer nodeos.Cleanup()
 
-	nodeos.Restart()
+	if environment.Autostart {
+		nodeos.Start()
+	}
 
 	body()
 }
