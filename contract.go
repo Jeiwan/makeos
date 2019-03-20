@@ -3,6 +3,8 @@ package makeos
 import (
 	"fmt"
 	"os/exec"
+	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/eoscanada/eos-go/system"
@@ -14,14 +16,22 @@ import (
 // Contract ...
 type Contract struct {
 	Path    string
-	Account Account
+	Account *Account
 }
 
 // NewContract ...
-func NewContract(path string, account Account) (*Contract, error) {
+func NewContract(contractPath string) (*Contract, error) {
+	var err error
+
+	if !path.IsAbs(contractPath) {
+		contractPath, err = filepath.Abs(contractPath)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Contract{
-		Path:    path,
-		Account: account,
+		Path: contractPath,
 	}, nil
 }
 
@@ -37,7 +47,7 @@ func (c Contract) Build() error {
 }
 
 // Deploy ...
-func (c Contract) Deploy() error {
+func (c *Contract) Deploy(account *Account) error {
 	nodeos.Client.SetSigner(eosgo.NewWalletSigner(
 		keos.Client,
 		keos.Wallet,
@@ -52,8 +62,10 @@ func (c Contract) Deploy() error {
 	wasmName := fmt.Sprintf("%s.wasm", pathParts[len(pathParts)-1])
 	abiName := fmt.Sprintf("%s.abi", pathParts[len(pathParts)-1])
 
+	c.Account = account
+
 	setCode, err := system.NewSetCode(
-		eosgo.AccountName(c.Account),
+		eosgo.AccountName(*c.Account),
 		fmt.Sprintf("%s/%s", c.Path, wasmName),
 	)
 	if err != nil {
@@ -61,7 +73,7 @@ func (c Contract) Deploy() error {
 	}
 
 	setAbi, err := system.NewSetABI(
-		eosgo.AccountName(c.Account),
+		eosgo.AccountName(*c.Account),
 		fmt.Sprintf("%s/%s", c.Path, abiName),
 	)
 	if err != nil {

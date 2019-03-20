@@ -40,7 +40,7 @@ func (a Account) PushAction(contract *Contract, action string, args map[string]i
 		return err
 	}
 
-	abiResp, err := nodeos.Client.GetABI(eosgo.AccountName(contract.Account))
+	abiResp, err := nodeos.Client.GetABI(eosgo.AccountName(*contract.Account))
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (a Account) PushAction(contract *Contract, action string, args map[string]i
 
 	_, err = nodeos.Client.SignPushActions(
 		&eosgo.Action{
-			Account: eosgo.AccountName(contract.Account),
+			Account: eosgo.AccountName(*contract.Account),
 			Name:    eosgo.ActionName(action),
 			Authorization: []eosgo.PermissionLevel{
 				eosgo.PermissionLevel{
