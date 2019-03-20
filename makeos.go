@@ -23,7 +23,7 @@ var DevEnvironment = &Environment{
 }
 
 // WithEnvironment ...
-func WithEnvironment(environment *Environment, body func()) {
+func WithEnvironment(environment *Environment, body func(*Node)) {
 	nodeos = newNodeos(environment.NodeosURL)
 	keos = newKeos(
 		environment.KeosURL,
@@ -41,5 +41,5 @@ func WithEnvironment(environment *Environment, body func()) {
 		nodeos.Start()
 	}
 
-	body()
+	body(nodeos)
 }

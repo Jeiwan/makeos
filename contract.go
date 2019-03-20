@@ -15,49 +15,49 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Contract ...
+// Contract holds a connection between a blockchain account and local contract code.
+// Implements operations to interact with a contract deployed on the blockchain.
 type Contract struct {
 	Path    string
 	Account *Account
 }
 
-// NewContract ...
-func NewContract(contractPath string) (*Contract, error) {
+// NewContract returns a Contract
+func NewContract(contractPath string) *Contract {
 	var err error
 
 	if !path.IsAbs(contractPath) {
 		contractPath, err = filepath.Abs(contractPath)
 		if err != nil {
-			return nil, err
+			nodeos.PushError(err)
+			return nil
 		}
 	}
 
 	if _, err := os.Stat(contractPath); err != nil {
-		return nil, err
+		nodeos.PushError(err)
+		return nil
 	}
 
 	return &Contract{
 		Path: contractPath,
-	}, nil
+	}
 }
 
-// Build ...
-func (c Contract) Build() error {
+// Build compiles a contract. It relies on 'cmake' to provide compilation scripts and expects that Makefile exists in contracts directory.
+func (c Contract) Build() {
 	command := exec.Command("make")
 	command.Dir = c.Path
 
 	out, err := command.CombinedOutput()
-	logrus.Println(string(out))
-
-	return err
+	if err != nil {
+		nodeos.PushError(err)
+	}
+	logrus.Info(string(out))
 }
 
-// Deploy ...
-func (c *Contract) Deploy(account *Account) error {
-	nodeos.Client.SetSigner(eosgo.NewWalletSigner(
-		keos.Client,
-		keos.Wallet,
-	))
+// Deploy deploys a contracts on the blockchain and assigns account to the contract.
+func (c *Contract) Deploy(account *Account) {
 	if err := keos.Client.WalletUnlock(keos.Wallet, keos.WalletPassword); err != nil {
 		if !strings.Contains(err.Error(), "Already unlocked") {
 			logrus.Fatalln(err)
@@ -71,50 +71,57 @@ func (c *Contract) Deploy(account *Account) error {
 	c.Account = account
 
 	setCode, err := system.NewSetCode(
-		eosgo.AccountName(*c.Account),
+		eosgo.AccountName(c.Account.Name),
 		fmt.Sprintf("%s/%s", c.Path, wasmName),
 	)
 	if err != nil {
-		return err
+		nodeos.PushError(err)
+		return
 	}
 
 	setAbi, err := system.NewSetABI(
-		eosgo.AccountName(*c.Account),
+		eosgo.AccountName(c.Account.Name),
 		fmt.Sprintf("%s/%s", c.Path, abiName),
 	)
 	if err != nil {
-		return err
+		nodeos.PushError(err)
+		return
 	}
 
-	_, err = nodeos.Client.SignPushActions(
+	if _, err = nodeos.Client.SignPushActions(
 		setCode,
 		setAbi,
-	)
+	); err != nil {
+		nodeos.PushError(err)
+	}
 
-	return err
+	return
 }
 
 // Name returns contract account's name
 func (c Contract) Name() string {
-	return c.Account.Name()
+	return c.Account.Name
 }
 
 // PushAction pushes an action to the blockchain
-func (c Contract) PushAction(action string, args map[string]interface{}, permission *Permission) error {
+func (c Contract) PushAction(action string, args map[string]interface{}, permission *Permission) {
 	if err := keos.Client.WalletUnlock(keos.Wallet, keos.WalletPassword); err != nil {
 		if !strings.Contains(err.Error(), "Already unlocked") {
-			return err
+			nodeos.PushError(err)
+			return
 		}
 	}
 
 	actionData, err := json.Marshal(args)
 	if err != nil {
-		return err
+		nodeos.PushError(err)
+		return
 	}
 
 	abiResp, err := nodeos.Client.GetABI(eosgo.AccountName(c.Name()))
 	if err != nil {
-		return err
+		nodeos.PushError(err)
+		return
 	}
 
 	actionDataHex, err := abiResp.ABI.EncodeAction(
@@ -122,10 +129,11 @@ func (c Contract) PushAction(action string, args map[string]interface{}, permiss
 		actionData,
 	)
 	if err != nil {
-		return err
+		nodeos.PushError(err)
+		return
 	}
 
-	_, err = nodeos.Client.SignPushActions(
+	if _, err = nodeos.Client.SignPushActions(
 		&eosgo.Action{
 			Account: eosgo.AccountName(c.Name()),
 			Name:    eosgo.ActionName(action),
@@ -137,29 +145,32 @@ func (c Contract) PushAction(action string, args map[string]interface{}, permiss
 			},
 			ActionData: eosgo.NewActionDataFromHexData(actionDataHex),
 		},
-	)
-
-	return err
+	); err != nil {
+		nodeos.PushError(err)
+		return
+	}
 }
 
-// ReadTable ...
-func (c Contract) ReadTable(table, scope string) ([]map[string]interface{}, error) {
+// ReadTable returns rows from a contract's table.
+func (c Contract) ReadTable(table, scope string) []map[string]interface{} {
 	resp, err := nodeos.Client.GetTableRows(
 		eosgo.GetTableRowsRequest{
-			Code:  c.Account.Name(),
+			Code:  c.Account.Name,
 			Table: table,
 			Scope: scope,
 			JSON:  true,
 		},
 	)
 	if err != nil {
-		return nil, err
+		nodeos.PushError(err)
+		return nil
 	}
 
 	data := []map[string]interface{}{}
 	if err := resp.JSONToStructs(&data); err != nil {
-		return nil, err
+		nodeos.PushError(err)
+		return nil
 	}
 
-	return data, nil
+	return data
 }

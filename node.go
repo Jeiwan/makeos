@@ -16,26 +16,30 @@ import (
 	eosgo "github.com/eoscanada/eos-go"
 )
 
-var nodeos *node
-var keos *node
+var nodeos *Node
+var keos *Node
 
-type node struct {
+// Node represents a nodeos or keos
+type Node struct {
 	Client         *eosgo.API
+	Errors         []error
 	URL            string
 	Wallet         string
 	WalletPassword string
 }
 
-func newNodeos(URL string) *node {
-	return &node{
+func newNodeos(URL string) *Node {
+	return &Node{
 		Client: eosgo.New(URL),
+		Errors: []error{},
 		URL:    URL,
 	}
 }
 
-func newKeos(URL, wallet, walletPassword string) *node {
-	return &node{
+func newKeos(URL, wallet, walletPassword string) *Node {
+	return &Node{
 		Client:         eosgo.New(URL),
+		Errors:         []error{},
 		URL:            URL,
 		Wallet:         wallet,
 		WalletPassword: walletPassword,
@@ -43,7 +47,7 @@ func newKeos(URL, wallet, walletPassword string) *node {
 }
 
 // Cleanup ...
-func (n node) Cleanup() {
+func (n Node) Cleanup() {
 	pidFile := "./.eosnode.pid"
 	tmpPath := fmt.Sprintf("%s/eosnode", os.TempDir())
 
@@ -81,8 +85,22 @@ func (n node) Cleanup() {
 	}
 }
 
+// LastError returns last error happened while interacting with the node
+func (n Node) LastError() error {
+	if len(n.Errors) < 1 {
+		return nil
+	}
+
+	return n.Errors[0]
+}
+
+// PushError appends an error to the list of node's errors
+func (n *Node) PushError(err error) {
+	n.Errors = append(n.Errors, err)
+}
+
 // Start ...
-func (n node) Start() {
+func (n Node) Start() {
 	eosnodeID := "eosnode"
 	pidFilename := fmt.Sprintf("./.%s.pid", eosnodeID)
 	if _, err := os.Stat(pidFilename); !os.IsNotExist(err) {
