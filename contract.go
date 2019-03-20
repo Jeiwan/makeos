@@ -1,7 +1,9 @@
 package makeos
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -28,6 +30,10 @@ func NewContract(contractPath string) (*Contract, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if _, err := os.Stat(contractPath); err != nil {
+		return nil, err
 	}
 
 	return &Contract{
@@ -83,6 +89,54 @@ func (c *Contract) Deploy(account *Account) error {
 	_, err = nodeos.Client.SignPushActions(
 		setCode,
 		setAbi,
+	)
+
+	return err
+}
+
+// Name returns contract account's name
+func (c Contract) Name() string {
+	return c.Account.Name()
+}
+
+// PushAction pushes an action to the blockchain
+func (c Contract) PushAction(action string, args map[string]interface{}, permission *Permission) error {
+	if err := keos.Client.WalletUnlock(keos.Wallet, keos.WalletPassword); err != nil {
+		if !strings.Contains(err.Error(), "Already unlocked") {
+			return err
+		}
+	}
+
+	actionData, err := json.Marshal(args)
+	if err != nil {
+		return err
+	}
+
+	abiResp, err := nodeos.Client.GetABI(eosgo.AccountName(c.Name()))
+	if err != nil {
+		return err
+	}
+
+	actionDataHex, err := abiResp.ABI.EncodeAction(
+		eosgo.ActionName(action),
+		actionData,
+	)
+	if err != nil {
+		return err
+	}
+
+	_, err = nodeos.Client.SignPushActions(
+		&eosgo.Action{
+			Account: eosgo.AccountName(c.Name()),
+			Name:    eosgo.ActionName(action),
+			Authorization: []eosgo.PermissionLevel{
+				eosgo.PermissionLevel{
+					Actor:      eosgo.AccountName(permission.Actor),
+					Permission: eosgo.PermissionName(permission.Level),
+				},
+			},
+			ActionData: eosgo.NewActionDataFromHexData(actionDataHex),
+		},
 	)
 
 	return err

@@ -1,5 +1,9 @@
 package makeos
 
+import (
+	eosgo "github.com/eoscanada/eos-go"
+)
+
 // Environment ...
 type Environment struct {
 	Autostart      bool
@@ -26,6 +30,10 @@ func WithEnvironment(environment *Environment, body func()) {
 		environment.Wallet,
 		environment.WalletPassword,
 	)
+	nodeos.Client.SetSigner(eosgo.NewWalletSigner(
+		keos.Client,
+		keos.Wallet,
+	))
 
 	defer nodeos.Cleanup()
 
