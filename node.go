@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/Jeiwan/makeos/internal"
 	"github.com/sirupsen/logrus"
 
 	eosgo "github.com/eoscanada/eos-go"
@@ -120,7 +121,7 @@ func (n Node) Start() {
 		logrus.Fatalf("mkdir: %s", err.Error())
 	}
 
-	configContent, err := Asset("config.ini")
+	configContent, err := internal.Asset("config.ini")
 	if err != nil {
 		logrus.Fatalf("load config asset: %s", err.Error())
 	}
