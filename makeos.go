@@ -35,7 +35,11 @@ func WithEnvironment(environment *Environment, body func(*Node)) {
 		keos.Wallet,
 	))
 
-	defer nodeos.Cleanup()
+	defer func() {
+		if environment.Autostart {
+			nodeos.Cleanup()
+		}
+	}()
 
 	if environment.Autostart {
 		nodeos.Start()
