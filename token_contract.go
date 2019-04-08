@@ -29,7 +29,38 @@ func (c TokenContract) Balance(account, symbol string) *eosgo.Asset {
 	return &asset
 }
 
-// Transfer ...
+// Create calls 'create' action of a token contract.
+func (c TokenContract) Create(issuer string, maxSupply string) {
+	c.PushAction(
+		"create",
+		map[string]interface{}{
+			"issuer":         issuer,
+			"maximum_supply": maxSupply,
+		},
+		&Permission{
+			Actor: c.Account.Name,
+			Level: "active",
+		},
+	)
+}
+
+// Issue calls 'issue' action of a token contract.
+func (c TokenContract) Issue(to, quantity, memo string) {
+	c.PushAction(
+		"issue",
+		map[string]interface{}{
+			"to":       to,
+			"quantity": quantity,
+			"memo":     memo,
+		},
+		&Permission{
+			Actor: c.Account.Name,
+			Level: "active",
+		},
+	)
+}
+
+// Transfer calls 'transfer' action of a token contract.
 func (c TokenContract) Transfer(from, to, quantity, memo string) {
 	c.PushAction(
 		"transfer",
