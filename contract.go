@@ -113,25 +113,32 @@ func (c Contract) PushAction(action string, args map[string]interface{}, permiss
 		}
 	}
 
-	actionData, err := json.Marshal(args)
-	if err != nil {
-		nodeos.PushError(err)
-		return
-	}
+	var actionDataHex []byte
+	var err error
 
-	abiResp, err := nodeos.Client.GetABI(eosgo.AccountName(c.Name()))
-	if err != nil {
-		nodeos.PushError(err)
-		return
-	}
+	if len(args) == 0 {
+		actionDataHex = []byte("\"\"")
+	} else {
+		actionData, err := json.Marshal(args)
+		if err != nil {
+			nodeos.PushError(err)
+			return
+		}
 
-	actionDataHex, err := abiResp.ABI.EncodeAction(
-		eosgo.ActionName(action),
-		actionData,
-	)
-	if err != nil {
-		nodeos.PushError(err)
-		return
+		abiResp, err := nodeos.Client.GetABI(eosgo.AccountName(c.Name()))
+		if err != nil {
+			nodeos.PushError(err)
+			return
+		}
+
+		actionDataHex, err = abiResp.ABI.EncodeAction(
+			eosgo.ActionName(action),
+			actionData,
+		)
+		if err != nil {
+			nodeos.PushError(err)
+			return
+		}
 	}
 
 	if _, err = nodeos.Client.SignPushActions(
