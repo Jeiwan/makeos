@@ -69,6 +69,7 @@ func (c *Contract) Deploy(account *Account) {
 	abiName := fmt.Sprintf("%s.abi", pathParts[len(pathParts)-1])
 
 	c.Account = account
+	fmt.Print(c.Account.Name)
 
 	setCode, err := system.NewSetCode(
 		eosgo.AccountName(c.Account.Name),

@@ -6,6 +6,7 @@ import (
 
 // Environment ...
 type Environment struct {
+	Autofail       bool
 	Autostart      bool
 	NodeosURL      string
 	KeosURL        string
@@ -15,6 +16,7 @@ type Environment struct {
 
 // DevEnvironment ...
 var DevEnvironment = &Environment{
+	Autofail:       false,
 	Autostart:      true,
 	NodeosURL:      "http://127.0.0.1:8888",
 	KeosURL:        "http://127.0.0.1:8899",
@@ -25,6 +27,9 @@ var DevEnvironment = &Environment{
 // WithEnvironment ...
 func WithEnvironment(environment *Environment, body func(*Node)) {
 	nodeos = newNodeos(environment.NodeosURL)
+	if environment.Autofail {
+		nodeos.FailOnError = true
+	}
 	keos = newKeos(
 		environment.KeosURL,
 		environment.Wallet,

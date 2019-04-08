@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -24,6 +25,7 @@ var keos *Node
 type Node struct {
 	Client         *eosgo.API
 	Errors         []error
+	FailOnError    bool
 	URL            string
 	Wallet         string
 	WalletPassword string
@@ -97,6 +99,9 @@ func (n Node) LastError() error {
 
 // PushError appends an error to the list of node's errors
 func (n *Node) PushError(err error) {
+	if n.FailOnError {
+		log.Fatal(err)
+	}
 	n.Errors = append(n.Errors, err)
 }
 
